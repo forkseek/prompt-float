@@ -1,4 +1,4 @@
-const { isIP } = require("node:net");
+const releaseTarget = require("../shared/releaseTarget.json");
 
 function requireText(environment, name) {
   const value = environment[name]?.trim();
@@ -6,32 +6,7 @@ function requireText(environment, name) {
   return value;
 }
 
-function normalizeUpdateUrl(value) {
-  let url;
-  try {
-    url = new URL(value);
-  } catch {
-    throw new Error("PROMPT_FLOAT_UPDATE_URL must be a valid HTTPS directory");
-  }
-  if (
-    url.protocol !== "https:" ||
-    !url.hostname.includes(".") ||
-    isIP(url.hostname) !== 0 ||
-    url.hostname.endsWith(".local") ||
-    url.username ||
-    url.password ||
-    url.search ||
-    url.hash
-  ) {
-    throw new Error("PROMPT_FLOAT_UPDATE_URL must be a credential-free HTTPS directory");
-  }
-  return url.href;
-}
-
 function signedReleaseConfiguration(environment) {
-  const updateUrl = normalizeUpdateUrl(
-    requireText(environment, "PROMPT_FLOAT_UPDATE_URL"),
-  );
   const publisherName = requireText(environment, "PROMPT_FLOAT_PUBLISHER_NAME");
   const appId = requireText(environment, "PROMPT_FLOAT_APP_ID");
   const author = requireText(environment, "PROMPT_FLOAT_AUTHOR");
@@ -49,9 +24,9 @@ function signedReleaseConfiguration(environment) {
     appId,
     extraMetadata: {
       author,
-      releaseTrust: { updateUrl, publisherName },
+      releaseTrust: { ...releaseTarget, publisherName },
     },
-    publish: [{ provider: "generic", url: updateUrl, publisherName: [publisherName] }],
+    publish: [{ ...releaseTarget, publisherName: [publisherName] }],
     win: {
       forceCodeSigning: true,
       verifyUpdateCodeSignature: true,

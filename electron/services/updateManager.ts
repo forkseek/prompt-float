@@ -64,11 +64,22 @@ export async function configureAutoUpdates(): Promise<void> {
   autoUpdater.autoInstallOnAppQuit = true;
   autoUpdater.allowDowngrade = false;
   autoUpdater.disableWebInstaller = true;
-  autoUpdater.setFeedURL({ provider: "generic", url: trusted.updateUrl });
+  autoUpdater.setFeedURL(trusted.provider === "github"
+    ? {
+        provider: "github",
+        owner: trusted.owner,
+        repo: trusted.repo,
+        host: trusted.host,
+        protocol: trusted.protocol,
+        publisherName: [trusted.publisherName],
+      }
+    : { provider: "generic", url: trusted.updateUrl });
 
   autoUpdater.on("checking-for-update", () =>
     recordDiagnostic("info", "updates.checking", {
-      host: new URL(trusted.updateUrl).hostname,
+      host: trusted.provider === "github"
+        ? trusted.host
+        : new URL(trusted.updateUrl).hostname,
     }),
   );
   autoUpdater.on("update-available", (info) =>

@@ -11,7 +11,6 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 45
     env:
-      PROMPT_FLOAT_UPDATE_URL: ${{ vars.PROMPT_FLOAT_UPDATE_URL }}
       PROMPT_FLOAT_PUBLISHER_NAME: ${{ vars.PROMPT_FLOAT_PUBLISHER_NAME }}
       PROMPT_FLOAT_APP_ID: ${{ vars.PROMPT_FLOAT_APP_ID }}
       PROMPT_FLOAT_AUTHOR: ${{ vars.PROMPT_FLOAT_AUTHOR }}
@@ -34,9 +33,6 @@ jobs:
           if ([string]::IsNullOrWhiteSpace($env:CSC_LINK) -or
               [string]::IsNullOrWhiteSpace($env:CSC_KEY_PASSWORD)) {
             throw "WINDOWS_CSC_LINK and WINDOWS_CSC_KEY_PASSWORD are required"
-          }
-          if ([string]::IsNullOrWhiteSpace($env:PROMPT_FLOAT_UPDATE_URL)) {
-            throw "Repository variable PROMPT_FLOAT_UPDATE_URL is required"
           }
           foreach ($name in @('PROMPT_FLOAT_PUBLISHER_NAME', 'PROMPT_FLOAT_APP_ID', 'PROMPT_FLOAT_AUTHOR')) {
             if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
