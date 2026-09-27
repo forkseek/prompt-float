@@ -62,7 +62,7 @@
     "typescript-eslint": "8.70.1",
     "vite": "^6.1.0",
     "vitest": "^5.0.0",
-    "wait-on": "^8.0.3"
+    "wait-on": "^9.1.0"
   },
   "build": {
     "appId": "local.promptfloat.mvp",
