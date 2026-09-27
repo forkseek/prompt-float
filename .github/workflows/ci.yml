@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "codex/**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: node scripts/check-lockfile.cjs
+      - run: npm ci
+      - run: npm run check:supply-chain
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:coverage
+      - run: npm run build
+      - run: npx playwright test
+      - run: node --test scripts/release-config.test.cjs scripts/check-lockfile.test.cjs
+      - run: npx electron-builder --win dir --config.directories.output=release/ci-verification
+        env:
+          ELECTRON_BUILDER_CACHE: ${{ github.workspace }}\.electron-builder-cache
+      - run: npm run test:e2e:packaged
+        env:
+          PROMPT_FLOAT_RELEASE_DIR: release/ci-verification
+      - run: npm run sbom -- --output release/ci-verification/SBOM.cdx.json
+      - run: npm run test:install-upgrade
+        env:
+          PROMPT_FLOAT_ENABLE_INSTALL_UPGRADE_TEST: "1"

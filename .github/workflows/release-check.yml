@@ -1,0 +1,52 @@
+name: Signed Windows Release Check
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package-and-verify:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      PROMPT_FLOAT_UPDATE_URL: ${{ vars.PROMPT_FLOAT_UPDATE_URL }}
+      PROMPT_FLOAT_PUBLISHER_NAME: ${{ vars.PROMPT_FLOAT_PUBLISHER_NAME }}
+      PROMPT_FLOAT_APP_ID: ${{ vars.PROMPT_FLOAT_APP_ID }}
+      PROMPT_FLOAT_AUTHOR: ${{ vars.PROMPT_FLOAT_AUTHOR }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: node scripts/check-lockfile.cjs
+      - run: npm ci
+      - run: npm run check:supply-chain
+      - run: npm run test:ci
+      - name: Require Windows signing credentials
+        env:
+          CSC_LINK: ${{ secrets.WINDOWS_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CSC_KEY_PASSWORD }}
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:CSC_LINK) -or
+              [string]::IsNullOrWhiteSpace($env:CSC_KEY_PASSWORD)) {
+            throw "WINDOWS_CSC_LINK and WINDOWS_CSC_KEY_PASSWORD are required"
+          }
+          if ([string]::IsNullOrWhiteSpace($env:PROMPT_FLOAT_UPDATE_URL)) {
+            throw "Repository variable PROMPT_FLOAT_UPDATE_URL is required"
+          }
+          foreach ($name in @('PROMPT_FLOAT_PUBLISHER_NAME', 'PROMPT_FLOAT_APP_ID', 'PROMPT_FLOAT_AUTHOR')) {
+            if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
+              throw "Repository variable $name is required"
+            }
+          }
+      - name: Build signed release
+        env:
+          CSC_LINK: ${{ secrets.WINDOWS_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CSC_KEY_PASSWORD }}
+        run: npm run dist
+      - run: npm run test:e2e:packaged
+      - run: npm run verify:release -- -RequireValidSignature

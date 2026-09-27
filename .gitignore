@@ -1,0 +1,20 @@
+node_modules/
+dist/
+dist-electron/
+release/
+release-v*/
+.vite/
+*.log
+.DS_Store
+Thumbs.db
+playwright-report/
+test-results/
+.electron-builder-cache/
+coverage/
+.env
+.env.*
+!.env.example
+Prompt Float 0.6.0_代码汇总_*/
+Prompt Float 0.6.0_前端界面独立修改包/
+nova-robot-preview.html
+nova-robot-preview.svg

@@ -1,0 +1,112 @@
+{
+  "name": "prompt-float-mvp",
+  "version": "0.6.2",
+  "private": true,
+  "license": "MIT",
+  "description": "A compact desktop prompt optimization window",
+  "main": "dist-electron/electron/main.js",
+  "scripts": {
+    "dev": "concurrently -k \"npm:dev:renderer\" \"npm:dev:electron\"",
+    "dev:renderer": "vite --host 127.0.0.1",
+    "dev:electron": "tsc -p electron/tsconfig.json && wait-on tcp:127.0.0.1:5173 && cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electron .",
+    "typecheck": "tsc --noEmit && tsc -p electron/tsconfig.json --noEmit",
+    "lint": "eslint electron src shared e2e scripts vite.config.ts vitest.config.ts playwright.config.ts eslint.config.mjs",
+    "test": "npm run test:unit",
+    "test:unit": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "npm run build && playwright test",
+    "test:e2e:packaged": "node scripts/smoke-packaged.cjs",
+    "test:install-upgrade": "node scripts/test-install-upgrade.cjs",
+    "test:all": "npm run test:unit && npm run test:e2e",
+    "test:ci": "npm run lint && npm run typecheck && npm run test:coverage && node --test scripts/release-config.test.cjs scripts/check-lockfile.test.cjs scripts/generate-release-manifest.test.cjs scripts/build-portable.test.cjs scripts/verify-release.test.cjs && npm run test:e2e",
+    "check:lockfile": "node scripts/check-lockfile.cjs",
+    "check:supply-chain": "npm run check:lockfile && npm audit --audit-level=high && npm audit signatures",
+    "sbom": "node scripts/generate-sbom.cjs",
+    "smoke:package": "npm run test:e2e:packaged",
+    "generate:icon": "electron scripts/generate-icon.cjs",
+    "build:renderer": "vite build",
+    "build:electron": "tsc -p electron/tsconfig.json",
+    "build": "npm run typecheck && npm run build:renderer && npm run build:electron",
+    "dist:portable": "npm run build && node scripts/build-portable.cjs",
+    "dist": "npm run build && node scripts/build-windows.cjs && npm run sbom && node scripts/generate-release-manifest.cjs",
+    "verify:release": "pwsh -NoProfile -File scripts/verify-release.ps1"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "diff": "^8.0.2",
+    "electron-updater": "^6.8.9",
+    "js-yaml": "^4.3.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zod": "^4.6.2"
+  },
+  "devDependencies": {
+    "@electron/fuses": "2.1.3",
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "^1.63.0",
+    "@types/express": "^5.0.6",
+    "@types/js-yaml": "4.0.9",
+    "@types/node": "^22.13.4",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "@vitejs/plugin-react": "^4.4.1",
+    "@vitest/coverage-v8": "^5.0.1",
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
+    "electron": "^44.3.0",
+    "electron-builder": "^26.0.12",
+    "eslint": "10.11.0",
+    "express": "^5.2.1",
+    "globals": "17.12.0",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "8.70.1",
+    "vite": "^6.1.0",
+    "vitest": "^5.0.0",
+    "wait-on": "^8.0.3"
+  },
+  "build": {
+    "appId": "local.promptfloat.mvp",
+    "productName": "Prompt Float",
+    "asar": true,
+    "electronDist": "node_modules/electron/dist",
+    "afterPack": "scripts/apply-electron-fuses.cjs",
+    "directories": {
+      "output": "release/v${version}"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Prompt Float",
+      "artifactName": "${productName}-Setup-${version}-${arch}.${ext}"
+    },
+    "portable": {
+      "artifactName": "${productName}-Portable-${version}-${arch}.${ext}",
+      "requestExecutionLevel": "user"
+    }
+  }
+}
